@@ -1,3 +1,3 @@
-/Users/luoshiheng/MyCode/mechine_learning/nCoV2/CMakeFiles/rebuild_cache.dir
-/Users/luoshiheng/MyCode/mechine_learning/nCoV2/CMakeFiles/edit_cache.dir
-/Users/luoshiheng/MyCode/mechine_learning/nCoV2/CMakeFiles/main.dir
+/Users/luoshiheng/MyCode/ncov/nCoV_v3/CMakeFiles/rebuild_cache.dir
+/Users/luoshiheng/MyCode/ncov/nCoV_v3/CMakeFiles/edit_cache.dir
+/Users/luoshiheng/MyCode/ncov/nCoV_v3/CMakeFiles/main.dir

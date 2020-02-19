@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/Users/luoshiheng/MyCode/mechine_learning/nCoV2/src/main.cpp
+/Users/luoshiheng/MyCode/ncov/nCoV_v3/src/main.cpp
 iostream
 -
 vector
@@ -22,9 +22,9 @@ string
 unistd.h
 -
 train.h
-/Users/luoshiheng/MyCode/mechine_learning/nCoV2/src/train.h
+/Users/luoshiheng/MyCode/ncov/nCoV_v3/src/train.h
 
-/Users/luoshiheng/MyCode/mechine_learning/nCoV2/src/train.h
+/Users/luoshiheng/MyCode/ncov/nCoV_v3/src/train.h
 iostream
 -
 time.h

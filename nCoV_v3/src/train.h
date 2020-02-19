@@ -3,14 +3,14 @@
 #include <vector>
 #include <fstream>
 using namespace std;
-#define E 2.71828182846
+#define EXP 2.71828182846
 #define START_DAY 20
 const int N=57370000;
 //const int N=1400050000;
 
 struct Infect_Data{
 	int day;
-	float S,I,R;
+	float S,E,I,R;
 };
 
 class Model{
@@ -25,7 +25,8 @@ public:
 	void train(vector<Infect_Data> data,Infect_Data* lastday);
 	void evaluate(vector<Infect_Data> data);
 	void predict(int day,int nowday,Infect_Data data);
-	void update(vector<Infect_Data>,vector<float>*,vector<float>*,vector<float>*);
+	void update(vector<Infect_Data>,vector<float>*,vector<float>*,vector<float>*,vector<float>*);
+	void pre_daily_data(int,int,vector<Infect_Data>,vector<float>*,vector<float>*,vector<float>*,vector<float>*,Infect_Data*);
 };
 void get_data(vector<Infect_Data>* data,string addr,int num){
 	ifstream sample(addr);
@@ -56,9 +57,9 @@ void write_data(vector<float> S_pre,vector<float> I_pre,vector<float> R_pre,stri
 			opf << "3/"<< nowday+i-11-28 << " " << S_pre[i] << " " << I_pre[i] << " " << R_pre[i] << endl;
 	}
 }
-#define temp pow(E,alpha*(bias+i))
+#define temp pow(EXP,alpha*(bias+i))
 #define pre  -2*(data[i].I - (*I_pre)[i])*((*I_pre)[i])*i
-void Model::update(vector<Infect_Data> data,vector<float>* S_pre,vector<float>* I_pre,vector<float>* R_pre){
+void Model::update(vector<Infect_Data> data,vector<float>* S_pre,vector<float>* E_pre,vector<float>* I_pre,vector<float>* R_pre){
 	float alpha_eta  =0.0000000001;
 	float bias_eta   =0.0000001;
 	float c_eta      =0.0000001;
@@ -78,38 +79,47 @@ void Model::update(vector<Infect_Data> data,vector<float>* S_pre,vector<float>* 
 	bias  -= bias_eta*bias_temp;
 	c     -= c_eta*c_temp;
 }
-void Model::train(vector<Infect_Data> data,Infect_Data* last_day){
+void Model::pre_daily_data(int e,int i,vector<Infect_Data> data,vector<float>* S_pre,vector<float>* E_pre,vector<float>* I_pre,vector<float>* R_pre,Infect_Data* last_day){
+	float beta  = c * pow(EXP,-alpha*(i+bias)) / pow(1+pow(EXP,-alpha*(i+bias)),2);
+	float beta2 = 0;
+	Infect_Data diff;
+	cout << "BETA  " << beta << endl;
+	cout << "BETA2 " << beta2 << endl;
+	if(i==0){
+		(*S_pre).push_back(data[0].S);
+		(*E_pre).push_back(data[0].E);
+		(*I_pre).push_back(data[0].I);
+		(*R_pre).push_back(data[0].R);	
+	}
+	else{
+		diff.S =  -beta*data[i-1].S*data[i-1].I/N - beta2*data[i-1].E*data[i-1].S/N;
+		diff.E =  beta*data[i-1].I*data[i-1].S/N - alpha*data[i-1].E;
+		diff.I =  alpha*data[i-1].E - gamma*data[i-1].I;	
+		diff.R =  gamma*data[i-1].I;
+
+		(*S_pre).push_back((*S_pre)[i-1]+diff.S);
+		(*E_pre).push_back((*E_pre)[i-1]+diff.E);
+		(*I_pre).push_back((*I_pre)[i-1]+diff.I);
+		(*R_pre).push_back((*R_pre)[i-1]+diff.R);
+	}
+	if(e==epoch-1){
+		last_day->S = (*S_pre)[data.size()-1];
+		last_day->E = (*E_pre)[data.size()-1];
+		last_day->I = (*I_pre)[data.size()-1];
+		last_day->R = (*R_pre)[data.size()-1];
+	}
+}
+void Model::train(vector<Infect_Data> data,Infect_Data* lastday){
 	//change weights in each epoch
 	ofstream loss_re("datafile/lossere.txt");
 
 	for(int e=0;e<epoch;e++){
 		vector<float> S_pre;
+		vector<float> E_pre;
 		vector<float> I_pre;
 		vector<float> R_pre;
-		Infect_Data diff;
-		vector<float> beta_recoder;
 		for(int i =0;i<data.size();i++){		
-			float beta = c * pow(E,-alpha*(i+bias)) / pow(1+pow(E,-alpha*(i+bias)),2);
-			cout << "BETA " << beta << endl;
-			if(i==0){
-				S_pre.push_back(data[0].S);
-				I_pre.push_back(data[0].I);
-				R_pre.push_back(data[0].R);	
-			}
-			else{
-				diff.S = -beta*data[i-1].S*data[i-1].I/N;
-				diff.I =  beta*data[i-1].S*data[i-1].I/N - gamma*data[i-1].I;
-				diff.R =  gamma*data[i-1].I;
-				S_pre.push_back(S_pre[i-1]+diff.S);
-				I_pre.push_back(I_pre[i-1]+diff.I);
-				R_pre.push_back(R_pre[i-1]+diff.R);
-			}
-			if(e==epoch-1){
-				last_day->S = S_pre[data.size()-1];
-				last_day->I = I_pre[data.size()-1];
-				last_day->R = R_pre[data.size()-1];
-				beta_recoder.push_back(beta);
-			}
+			pre_daily_data(e,i,data,&S_pre,&E_pre,&I_pre,&R_pre,lastday);
 		}	
 
 		//write the data if in the last iteration
@@ -122,9 +132,9 @@ void Model::train(vector<Infect_Data> data,Infect_Data* last_day){
 		cout << "ILOSS: " << loss(I_pre,data,'I') << endl<<endl;
 		loss_re << loss(I_pre,data,'I') << endl;	
 		//cout << "RLOSS: " << loss(I_pre,data,'R') << endl;		
-	
-		//do mahcine learning calculation
-		update(data,&S_pre,&I_pre,&R_pre);
+
+		//do mahcine learning calculation. update params
+		update(data,&S_pre,&E_pre,&I_pre,&R_pre);
 		//cin.get();
 	}
 	
@@ -157,7 +167,7 @@ void Model::predict(int day,int nowday,Infect_Data data){
 				R_pre.push_back(data.R);
 		}
 		else{
-			float beta = 1*pow(1+pow(E,alpha*(nowday+i)+bias)*c,-1);
+			float beta = 1*pow(1+pow(EXP,alpha*(nowday+i)+bias)*c,-1);
 			diff.S = -beta*S_pre[i-1]*I_pre[i-1]/N;
 			diff.I =  beta*S_pre[i-1]*I_pre[i-1]/N - gamma*I_pre[i-1];
 			diff.R =  gamma*I_pre[i-1];
