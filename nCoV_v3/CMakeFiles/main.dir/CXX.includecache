@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/luoshiheng/MyCode/mechine_learning/nCoV2/src/main.cpp
+iostream
+-
+vector
+-
+fstream
+-
+time.h
+-
+math.h
+-
+string
+-
+unistd.h
+-
+train.h
+/Users/luoshiheng/MyCode/mechine_learning/nCoV2/src/train.h
+
+/Users/luoshiheng/MyCode/mechine_learning/nCoV2/src/train.h
+iostream
+-
+time.h
+-
+vector
+-
+fstream
+-
+
