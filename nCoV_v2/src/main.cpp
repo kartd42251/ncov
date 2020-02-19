@@ -13,7 +13,7 @@ int main(int argc,char** argv){
 	vector<Infect_Data> train_data;
 	vector<Infect_Data> test_data;
 	vector<int> predict_data;
-    const int sample_num = 24;
+    const int sample_num = 31;
 	int epoch = 0;
 	if(argc==2)
 		epoch = stoi(argv[1]);

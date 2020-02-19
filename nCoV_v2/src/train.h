@@ -25,6 +25,7 @@ public:
 	void train(vector<Infect_Data> data,Infect_Data* lastday);
 	void evaluate(vector<Infect_Data> data);
 	void predict(int day,int nowday,Infect_Data data);
+	void gen_daily(int,vector<Infect_Data>,vector<float>*,vector<float>*,vector<float>*);
 	void update(vector<Infect_Data>,vector<float>*,vector<float>*,vector<float>*);
 };
 void get_data(vector<Infect_Data>* data,string addr,int num){
@@ -38,6 +39,7 @@ void get_data(vector<Infect_Data>* data,string addr,int num){
 		t.I = stof(str);
 		sample.getline(str,10);	
 		t.R = stof(str);
+		t.I-=t.R;
 		t.S = N - t.R - t.I;
 		data->push_back(t);
 		//print and check the data we get 
@@ -61,7 +63,7 @@ void write_data(vector<float> S_pre,vector<float> I_pre,vector<float> R_pre,stri
 void Model::update(vector<Infect_Data> data,vector<float>* S_pre,vector<float>* I_pre,vector<float>* R_pre){
 	float alpha_eta  =0.0000000001;
 	float bias_eta   =0.0000001;
-	float c_eta      =0.0000001;
+	float c_eta      =0.00000001;
 	float alpha_temp =0.0;
 	float bias_temp  =0.0;
 	float c_temp     =0.0;
@@ -78,49 +80,52 @@ void Model::update(vector<Infect_Data> data,vector<float>* S_pre,vector<float>* 
 	bias  -= bias_eta*bias_temp;
 	c     -= c_eta*c_temp;
 }
+void Model::gen_daily(int i,vector<Infect_Data> data,vector<float>* S_pre,vector<float>* I_pre,vector<float>* R_pre){
+	float beta = c * pow(E,-alpha*(i+bias)) / pow(1+pow(E,-alpha*(i+bias)),2);
+	cout << "BETA " << beta << endl;
+	Infect_Data diff;
+
+	if(i==0){
+		(*S_pre).push_back(data[0].S);
+		(*I_pre).push_back(data[0].I);
+		(*R_pre).push_back(data[0].R);	
+	}
+	else{
+		diff.S = -beta*data[i-1].S*data[i-1].I/N;
+		diff.I =  beta*data[i-1].S*data[i-1].I/N - gamma*data[i-1].I;
+		diff.R =  gamma*data[i-1].I;
+		(*S_pre).push_back((*S_pre)[i-1]+diff.S);
+		(*I_pre).push_back((*I_pre)[i-1]+diff.I);
+		(*R_pre).push_back((*R_pre)[i-1]+diff.R);
+	}
+}
 void Model::train(vector<Infect_Data> data,Infect_Data* last_day){
 	//change weights in each epoch
 	ofstream loss_re("datafile/lossere.txt");
-
+	ofstream beta_re("datafile/betare.txt");
 	for(int e=0;e<epoch;e++){
 		vector<float> S_pre;
 		vector<float> I_pre;
 		vector<float> R_pre;
-		Infect_Data diff;
 		vector<float> beta_recoder;
-		for(int i =0;i<data.size();i++){		
-			float beta = c * pow(E,-alpha*(i+bias)) / pow(1+pow(E,-alpha*(i+bias)),2);
-			cout << "BETA " << beta << endl;
-			if(i==0){
-				S_pre.push_back(data[0].S);
-				I_pre.push_back(data[0].I);
-				R_pre.push_back(data[0].R);	
-			}
-			else{
-				diff.S = -beta*data[i-1].S*data[i-1].I/N;
-				diff.I =  beta*data[i-1].S*data[i-1].I/N - gamma*data[i-1].I;
-				diff.R =  gamma*data[i-1].I;
-				S_pre.push_back(S_pre[i-1]+diff.S);
-				I_pre.push_back(I_pre[i-1]+diff.I);
-				R_pre.push_back(R_pre[i-1]+diff.R);
-			}
-			if(e==epoch-1){
-				last_day->S = S_pre[data.size()-1];
-				last_day->I = I_pre[data.size()-1];
-				last_day->R = R_pre[data.size()-1];
-				beta_recoder.push_back(beta);
-			}
-		}	
+		for(int i =0;i<data.size();i++)	
+			gen_daily(i,data,&S_pre,&I_pre,&R_pre);
 
 		//write the data if in the last iteration
-		if(e==epoch-1)
+		if(e==epoch-1){
 			write_data(S_pre,I_pre,R_pre,"datafile/adjust.txt",0);
-
+			last_day->S = S_pre[data.size()-1];
+			last_day->I = I_pre[data.size()-1];
+			last_day->R = R_pre[data.size()-1];
+			for(int i =0;i<data.size();i++)
+				beta_re << (c * pow(E,-alpha*(i+bias)) / pow(1+pow(E,-alpha*(i+bias)),2)) << endl;
+			
+		}
 		cout << "=======================================" << endl;
 		cout << "Epoch: " << e+1 << "/" << epoch << endl;
 		//print out how much the error is
 		cout << "ILOSS: " << loss(I_pre,data,'I') << endl<<endl;
-		loss_re << loss(I_pre,data,'I') << endl;	
+		loss_re << loss(I_pre,data,'I') << endl; 
 		//cout << "RLOSS: " << loss(I_pre,data,'R') << endl;		
 	
 		//do mahcine learning calculation
