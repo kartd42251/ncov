@@ -13,14 +13,14 @@ int main(int argc,char** argv){
 	vector<Infect_Data> train_data;
 	vector<Infect_Data> test_data;
 	vector<int> predict_data;
-    const int sample_num = 31;
+    const int sample_num = 47;
 	int epoch = 0;
 	if(argc==2)
 		epoch = stoi(argv[1]);
 	else 
 		epoch = 10;
 	
-	get_data(&train_data,"./datafile/outsideWH.txt",sample_num);	
+	get_data(&train_data,"./datafile/KR.txt");	
 	ofstream of("datafile/adjust.txt",ios::trunc);
 	Infect_Data lastday;
 	Model Model1(epoch);
