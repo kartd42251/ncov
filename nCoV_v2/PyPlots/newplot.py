@@ -12,17 +12,16 @@ fobj2.close()
 
 Sdata = []
 Rdata = []
-
 for data in datas:
-    a = data.split()
-    Sdata.append(int(a[2]))
-    Rdata.append(int(a[4]))
+    temp1 = data.split()
+    Sdata.append(int(temp1[2]))
+    Rdata.append(int(temp1[4]))
 
 Sdata2 = []
 Rdata2 = []
-for data2 in datas2:
-    b = data2.split()
-    Sdata2.append(float(b[2]))
+for data in datas2:
+    temp2 = data.split()
+    Sdata2.append(float(temp2[2]))
     #Rdata2.append(float(b[3])) 
 
 plt.plot(Sdata,label = 'real infected')
@@ -30,6 +29,6 @@ plt.plot(Rdata, label = 'real rocover')
 plt.plot(Sdata2,label = 'predict infected')
 plt.legend(loc = 'best')
 plt.axis([0,80,0,8000])
-plt.savefig('../predict.png')
+plt.savefig('./predict.png')
 plt.show()
 
